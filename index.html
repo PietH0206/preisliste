@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Preisliste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+
+/* Layout: Verwaltung mit Tabs (Preisliste | Angebote); Katalog links, Auswahl rechts sticky, mobil als Bottom-Sheet. Kunden sehen nur ihr eingefrorenes Angebot. */
+:root{
+  --bg:#0F0E14; --surface:#1A1922; --sunk:#25232F; --ink:#EEEDF3; --muted:#A09CAD; --line:#2E2C3A;
+  --accent:#45BDB2; --accent-ink:#06201D; --accent-soft:#163331; --price:#E6B45A; --danger:#F2867E;
+  --scrim:rgba(0,0,0,.65); --shadow:0 18px 40px -18px rgba(0,0,0,.85);
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1300px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 130px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2rem,5vw,3rem);line-height:1.05;margin:4px 0 6px;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:70ch}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:18px;overflow-x:auto}
+.tab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 14px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .pill{background:var(--sunk);border-radius:999px;padding:1px 8px;font-size:.78rem;margin-left:6px;font-variant-numeric:tabular-nums}
+.layout{display:grid;gap:28px;margin-top:8px}
+@media (min-width:980px){.layout{grid-template-columns:minmax(0,1fr) 390px}.wrap{padding-bottom:48px}}
+main{min-width:0}
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:8px;overflow-x:auto;padding-block:12px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.9rem;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cat{margin-top:22px}
+.cat-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.cat-head h2{font-family:var(--f-display);font-weight:700;font-size:1.5rem;margin:0;letter-spacing:-.01em}
+.cat-count{color:var(--muted);font-size:.85rem}
+.cat-head .btn{margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s;min-width:0}
+.card.in{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.media{aspect-ratio:16/10;position:relative;background:var(--sunk);max-width:100%}
+.media svg,.media img{width:100%;height:100%;display:block;object-fit:cover}
+.badge{position:absolute;top:10px;left:10px;background:var(--surface);color:var(--ink);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.incart{position:absolute;top:10px;right:10px;background:var(--accent);color:var(--accent-ink);font-size:.75rem;font-weight:700;padding:4px 9px;border-radius:999px}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card h3{font-family:var(--f-display);font-weight:700;font-size:1.15rem;margin:0;line-height:1.2}
+.desc{margin:0;color:var(--muted);font-size:.92rem}
+details summary{cursor:pointer;font-size:.85rem;font-weight:600;color:var(--accent);list-style:none;padding-block:2px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"+ "}
+details[open] summary::before{content:"− "}
+.incl{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px;font-size:.88rem}
+.incl li{padding-left:16px;position:relative}
+.incl li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--accent);opacity:.7}
+.foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px}
+.price{display:flex;flex-direction:column}
+.amt{font-family:var(--f-display);font-weight:800;font-size:1.4rem;color:var(--price);font-variant-numeric:tabular-nums;line-height:1.1}
+.unit{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.btn{border:1px solid transparent;border-radius:10px;padding:9px 14px;font-weight:600;cursor:pointer;background:var(--sunk);line-height:1.2}
+.btn:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.sm{padding:6px 10px;font-size:.85rem}
+.btn.danger{color:var(--danger);border-color:var(--line);background:transparent}
+.btn.danger.armed{background:var(--danger);color:var(--bg);border-color:var(--danger)}
+.edit-btn{align-self:flex-start;margin-top:6px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.stepper button{border:0;background:var(--sunk);width:34px;height:34px;cursor:pointer;font-size:1.1rem;font-weight:700}
+.stepper span{min-width:34px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.cart{background:var(--surface);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;min-width:0}
+@media (min-width:980px){.cart{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;align-self:start}.cart .close{display:none}}
+.cart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 18px 12px;border-bottom:1px solid var(--line)}
+.cart-head h2{font-family:var(--f-display);font-size:1.35rem;margin:0}
+.count{font-size:.85rem;color:var(--muted)}
+.note{margin:12px 18px 0;padding:9px 12px;background:var(--accent-soft);border-radius:10px;font-size:.85rem}
+.lines{padding:6px 18px;display:grid}
+.line{padding-block:12px;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.line:last-child{border-bottom:0}
+.line-name{font-weight:700;min-width:0}
+.line-meta{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.line-sum{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.line .incl{grid-column:1/-1;font-size:.82rem;color:var(--muted);margin-top:2px}
+.line .stepper button{width:28px;height:28px;font-size:1rem}
+.line .stepper span{min-width:26px;font-size:.9rem}
+.empty{padding:22px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:1.1rem;margin-bottom:4px}
+.fields{padding:14px 18px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fields .full{grid-column:1/-1}
+label.f{display:grid;gap:4px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;min-width:0}
+.f input,.f select,.f textarea,.linkbox input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:.95rem;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink);min-width:0}
+.f textarea{min-height:100px;resize:vertical}
+.totals{padding:14px 18px;border-top:1px solid var(--line);display:grid;gap:6px;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;gap:10px}
+.row.muted{color:var(--muted);font-size:.88rem}
+.row.grand{font-family:var(--f-display);font-weight:800;font-size:1.5rem;padding-top:8px;border-top:2px solid var(--line);margin-top:4px}
+.row.grand span:last-child{color:var(--price)}
+.cart-actions{padding:0 18px 18px;display:flex;gap:8px;flex-wrap:wrap}
+.cart-actions .primary{flex:1}
+.bar{display:none}
+.scrim{display:none}
+@media (max-width:979px){
+  .cart{position:fixed;left:0;right:0;bottom:0;z-index:30;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;transform:translateY(105%);transition:transform .25s ease;box-shadow:var(--shadow);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  .cart.open{transform:none}
+  .scrim{position:fixed;inset:0;background:var(--scrim);z-index:25}
+  .scrim.show{display:block}
+  .bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);color:var(--ink);border:0;border-top:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));align-items:center;justify-content:space-between;gap:12px;width:100%;cursor:pointer;text-align:left}
+  .bar b{font-family:var(--f-display);font-size:1.2rem;font-variant-numeric:tabular-nums}
+  .bar .go{background:var(--accent);color:var(--accent-ink);padding:8px 14px;border-radius:10px;font-weight:700}
+}
+@media (prefers-reduced-motion:reduce){.cart{transition:none}}
+.banner{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.banner.warn{border-color:var(--price)}
+.banner.view{background:var(--accent-soft);border-color:transparent}
+.banner .acts{display:flex;gap:8px;flex-wrap:wrap}
+.letter{margin:16px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;white-space:pre-line;max-width:70ch}
+.offers-intro{margin:16px 0 0;color:var(--muted);max-width:75ch}
+.offers{display:grid;gap:14px;margin-top:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr))}
+.offer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px;min-width:0}
+.offer-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.offer h3{font-family:var(--f-display);font-size:1.2rem;margin:0;line-height:1.2}
+.meta{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.status{font-size:.75rem;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.status.on{background:var(--accent-soft);color:var(--accent)}
+.status.off{background:var(--sunk);color:var(--muted)}
+.offer-sum{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.9rem;align-items:baseline;flex-wrap:wrap}
+.offer-sum b{color:var(--price);font-family:var(--f-display);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.linkbox{display:flex;gap:8px}
+.linkbox input{flex:1;font-size:.85rem;font-family:ui-monospace,Menlo,Consolas,monospace}
+.offer-actions{display:flex;gap:8px;flex-wrap:wrap}
+.emptybox{margin-top:18px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:28px 20px;text-align:center;color:var(--muted)}
+.emptybox strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:1.2rem;margin-bottom:6px}
+.landing{min-height:70vh;display:grid;place-items:center;text-align:center}
+.landing .inner{max-width:460px;display:grid;gap:10px;justify-items:center}
+.modal{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dialog{background:var(--surface);border-radius:18px;width:min(560px,100%);max-height:100%;overflow:auto;padding:20px;display:grid;gap:12px;box-shadow:var(--shadow)}
+.dialog h2{font-family:var(--f-display);margin:0;font-size:1.35rem}
+.dialog .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dialog .thumb{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:var(--sunk)}
+.dialog .thumb img,.dialog .thumb svg{width:100%;height:100%;object-fit:cover;display:block}
+.dialog-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding-top:4px}
+.dialog-actions .spacer{flex:1}
+.checks{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:8px;margin:0}
+.checks legend{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:0 4px}
+.opt{display:flex;gap:8px;align-items:center;font-size:.92rem;cursor:pointer}
+.catchecks{display:flex;flex-wrap:wrap;gap:6px 14px;padding-left:26px}
+.hint{font-size:.85rem;color:var(--muted);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:calc(100% - 32px)}
+@media (min-width:980px){.toast{bottom:24px}}
+.copybox{width:100%;min-height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink)}
+.login{width:min(380px,100%);text-align:left;justify-items:stretch}
+.login h1{text-align:left}
+label.btn{display:inline-block}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<div id="modalRoot"></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+/* Firebase-Zugangsdaten stehen in config.js (wird bei Programm-Updates nicht ersetzt) */
+const FIREBASE_CONFIG=window.FIREBASE_CONFIG||{};
+
+const DEFAULT={
+"settings": {
+"firma": "Eventservice",
+"kmRate": 0.6,
+"mwst": 19,
+"validDays": 30
+},
+"categories": [
+{
+"id": "hochzeit",
+"name": "Hochzeit"
+},
+{
+"id": "ton",
+"name": "Tontechnik"
+},
+{
+"id": "licht",
+"name": "Lichttechnik"
+},
+{
+"id": "dj",
+"name": "DJ & Moderation"
+},
+{
+"id": "extras",
+"name": "Extras"
+}
+],
+"items": [
+{
+"id": "h-basic",
+"cat": "hochzeit",
+"name": "Hochzeit Basic",
+"price": 690,
+"unit": "pauschal",
+"motif": "rings",
+"hue": 330,
+"badge": "",
+"img": null,
+"desc": "Ton und Grundlicht für Trauung oder Feier bis 60 Gäste.",
+"incl": [
+"Beschallung für bis zu 60 Gäste",
+"1 Funkmikrofon für Reden",
+"4 LED-Uplights in Wunschfarbe",
+"Auf- und Abbau"
+]
+},
+{
+"id": "h-classic",
+"cat": "hochzeit",
+"name": "Hochzeit Classic",
+"price": 1290,
+"unit": "pauschal",
+"motif": "rings",
+"hue": 20,
+"badge": "Beliebt",
+"img": null,
+"desc": "Der komplette Abend mit DJ, Ton und Licht für bis zu 120 Gäste.",
+"incl": [
+"DJ bis 2 Uhr",
+"Beschallung für bis zu 120 Gäste",
+"2 Funkmikrofone",
+"8 LED-Uplights",
+"Tanzflächenlicht mit 2 Moving Heads",
+"Vorgespräch zu Musikwünschen",
+"Auf- und Abbau"
+]
+},
+{
+"id": "h-premium",
+"cat": "hochzeit",
+"name": "Hochzeit Premium",
+"price": 1990,
+"unit": "pauschal",
+"motif": "rings",
+"hue": 45,
+"badge": "",
+"img": null,
+"desc": "Trauung, Empfang und Party aus einer Hand, bis 200 Gäste.",
+"incl": [
+"Separate Beschallung der freien Trauung",
+"DJ open end (max. 4 Uhr)",
+"3 Funkmikrofone",
+"12 LED-Uplights",
+"4 Moving Heads und Nebelmaschine",
+"30 m Lichterketten als Deko",
+"2 Vorgespräche inkl. Ablaufplanung",
+"Auf- und Abbau"
+]
+},
+{
+"id": "t-s",
+"cat": "ton",
+"name": "Tonanlage S",
+"price": 149,
+"unit": "pro Tag",
+"motif": "speaker",
+"hue": 200,
+"badge": "",
+"img": null,
+"desc": "Für Reden, Hintergrundmusik und kleine Feiern bis 50 Personen.",
+"incl": [
+"2 aktive Topteile 12\"",
+"Kompaktmischpult",
+"1 Funkmikrofon",
+"Stative und Kabel"
+]
+},
+{
+"id": "t-m",
+"cat": "ton",
+"name": "Tonanlage M",
+"price": 289,
+"unit": "pro Tag",
+"motif": "speaker",
+"hue": 215,
+"badge": "",
+"img": null,
+"desc": "Party, Vereinsfest oder kleine Band bis 150 Personen.",
+"incl": [
+"2 Topteile 15\"",
+"2 Subwoofer 18\"",
+"Digitalmischpult",
+"2 Funkmikrofone",
+"Stative und Kabel"
+]
+},
+{
+"id": "t-l",
+"cat": "ton",
+"name": "Tonanlage L",
+"price": 549,
+"unit": "pro Tag",
+"motif": "speaker",
+"hue": 235,
+"badge": "",
+"img": null,
+"desc": "Line-Array für Open Air und große Säle bis 400 Personen.",
+"incl": [
+"Line-Array 2×4 Elemente",
+"4 Subwoofer 18\"",
+"Digitalpult 24 Kanäle",
+"4 Funkmikrofone",
+"2 Bühnenmonitore",
+"Einmessen vor Ort"
+]
+},
+{
+"id": "t-tech",
+"cat": "ton",
+"name": "Tontechniker vor Ort",
+"price": 45,
+"unit": "pro Stunde",
+"motif": "mixer",
+"hue": 190,
+"badge": "",
+"img": null,
+"desc": "Betreuung von Soundcheck bis Abbau.",
+"incl": []
+},
+{
+"id": "l-up",
+"cat": "licht",
+"name": "LED-Uplights (8 Stück)",
+"price": 119,
+"unit": "pro Tag",
+"motif": "uplight",
+"hue": 280,
+"badge": "",
+"img": null,
+"desc": "Raumbeleuchtung in Wunschfarbe, kabellos per Akku.",
+"incl": [
+"8 Akku-Uplights",
+"Farbe frei einstellbar",
+"Laufzeit ca. 12 Stunden"
+]
+},
+{
+"id": "l-party",
+"cat": "licht",
+"name": "Partylicht-Set",
+"price": 179,
+"unit": "pro Tag",
+"motif": "moving",
+"hue": 260,
+"badge": "",
+"img": null,
+"desc": "Bewegtes Licht für die Tanzfläche.",
+"incl": [
+"2 Moving Heads",
+"LED-Bar mit Effekten",
+"Nebelmaschine",
+"Automatische Steuerung zur Musik"
+]
+},
+{
+"id": "l-stage",
+"cat": "licht",
+"name": "Bühnenlicht",
+"price": 390,
+"unit": "pro Tag",
+"motif": "moving",
+"hue": 15,
+"badge": "",
+"img": null,
+"desc": "Traverse mit Front- und Effektlicht für Bühne oder Bandauftritt.",
+"incl": [
+"Traverse 6 m mit Stativen",
+"6 LED-PAR",
+"4 Moving Heads",
+"Lichtpult"
+]
+},
+{
+"id": "l-kette",
+"cat": "licht",
+"name": "Lichterketten 30 m",
+"price": 69,
+"unit": "pauschal",
+"motif": "string",
+"hue": 35,
+"badge": "",
+"img": null,
+"desc": "Warmweiße Deko für Zelt, Scheune oder Garten.",
+"incl": []
+},
+{
+"id": "dj-abend",
+"cat": "dj",
+"name": "DJ-Abend (6 Std.)",
+"price": 590,
+"unit": "pauschal",
+"motif": "dj",
+"hue": 300,
+"badge": "",
+"img": null,
+"desc": "DJ mit eigener Technik am Pult, Musik nach euren Wünschen.",
+"incl": [
+"6 Stunden Spielzeit",
+"Musikwunschliste vorab",
+"Kurzmoderation auf Wunsch",
+"DJ-Pult und Monitor"
+]
+},
+{
+"id": "dj-verl",
+"cat": "dj",
+"name": "Verlängerungsstunde DJ",
+"price": 80,
+"unit": "pro Stunde",
+"motif": "dj",
+"hue": 320,
+"badge": "",
+"img": null,
+"desc": "Wenn die Tanzfläche noch voll ist.",
+"incl": []
+},
+{
+"id": "dj-mod",
+"cat": "dj",
+"name": "Moderation Programmpunkte",
+"price": 150,
+"unit": "pauschal",
+"motif": "mic",
+"hue": 285,
+"badge": "",
+"img": null,
+"desc": "Ansagen für Spiele, Reden, Torte und Eröffnungstanz.",
+"incl": [
+"Abstimmung des Ablaufs vorab",
+"Moderation am Abend"
+]
+},
+{
+"id": "x-fotobox",
+"cat": "extras",
+"name": "Fotobox mit Drucker",
+"price": 349,
+"unit": "pauschal",
+"motif": "camera",
+"hue": 185,
+"badge": "Neu",
+"img": null,
+"desc": "Sofortdrucke und digitale Galerie für alle Gäste.",
+"incl": [
+"400 Drucke 10×15 cm",
+"Requisitenkiste",
+"Layout mit Namen und Datum",
+"Online-Galerie"
+]
+},
+{
+"id": "x-funk",
+"cat": "extras",
+"name": "Zusätzliches Funkmikrofon",
+"price": 25,
+"unit": "pro Stück",
+"motif": "mic",
+"hue": 210,
+"badge": "",
+"img": null,
+"desc": "Für Reden, Spiele oder Gesang.",
+"incl": []
+},
+{
+"id": "x-nebel",
+"cat": "extras",
+"name": "Bodennebel Eröffnungstanz",
+"price": 120,
+"unit": "pauschal",
+"motif": "fog",
+"hue": 240,
+"badge": "",
+"img": null,
+"desc": "Tanzen auf Wolken für den ersten Tanz.",
+"incl": []
+},
+{
+"id": "x-beamer",
+"cat": "extras",
+"name": "Beamer und Leinwand",
+"price": 89,
+"unit": "pro Tag",
+"motif": "beamer",
+"hue": 220,
+"badge": "",
+"img": null,
+"desc": "Für Diashow, Präsentation oder Fußballabend.",
+"incl": [
+"Full-HD-Beamer",
+"Leinwand 2,4 m",
+"HDMI-Kabel"
+]
+}
+]
+};
+
+const $=id=>document.getElementById(id);
+const FMT=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'});
+const eur=n=>FMT.format(n||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+const UNITS=['pauschal','pro Stunde','pro Tag','pro Stück'];
+const UNIT_SHORT={'pauschal':'×','pro Stunde':'Std.','pro Tag':'Tag(e)','pro Stück':'Stk.'};
+const MOTIFS={rings:'Ringe',speaker:'Lautsprecher',mixer:'Mischpult',uplight:'Uplights',moving:'Moving Heads',string:'Lichterkette',dj:'DJ-Pult',mic:'Mikrofon',camera:'Fotobox',fog:'Nebel',beamer:'Beamer'};
+
+const configured=!!FIREBASE_CONFIG.apiKey;
+let db=null,auth=null;
+if(configured){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();auth=firebase.auth()}
+
+let user=null,authReady=!configured;
+let catalog=null,offers=[],adminError='';
+let unsubCatalog=null,unsubOffers=null;
+const imgCache={},offerCache={};
+let ctx=null,filter='alle',view='',tab='preise',templateFrom=null,pendingRender=false;
+const openDetails=new Map();
+
+/* ---------- Datum ---------- */
+const pad=n=>String(n).padStart(2,'0');
+function isoToday(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function addDays(iso,n){const d=new Date(iso+'T12:00');d.setDate(d.getDate()+n);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function fmtDate(s){if(!s)return '';const d=new Date(s.length===10?s+'T12:00':s);return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}
+const offerNo=o=>o.id.toUpperCase();
+const expired=o=>o.validUntil&&o.validUntil<isoToday();
+const baseUrl=()=>location.origin+location.pathname;
+const offerLink=o=>baseUrl()+'#'+o.id;
+function rid(n=6){const a=new Uint8Array(n);crypto.getRandomValues(a);return [...a].map(x=>'abcdefghijkmnpqrstuvwxyz23456789'[x%32]).join('')}
+
+/* ---------- Illustrationen ---------- */
+let artN=0;
+function spark(x,y,s=10){return `<path d="M${x} ${y-s}L${x+s*.3} ${y-s*.3}L${x+s} ${y}L${x+s*.3} ${y+s*.3}L${x} ${y+s}L${x-s*.3} ${y+s*.3}L${x-s} ${y}L${x-s*.3} ${y-s*.3}Z" fill="#fff" fill-opacity=".8"/>`}
+function art(m,h){
+  const n=++artN;h=+h||0;
+  const glow=`hsl(${h} 80% 70%)`,soft=`hsl(${h} 70% 84%)`,dark=`hsl(${h} 25% 9%)`,mid=`hsl(${h} 20% 24%)`;
+  const defs=`<defs><linearGradient id="bg${n}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h} 45% 26%)"/><stop offset="1" stop-color="hsl(${(h+35)%360} 55% 10%)"/></linearGradient><radialGradient id="gl${n}" cx=".5" cy=".35" r=".6"><stop offset="0" stop-color="${glow}" stop-opacity=".45"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient><linearGradient id="bm${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${soft}" stop-opacity=".7"/><stop offset="1" stop-color="${soft}" stop-opacity="0"/></linearGradient></defs><rect width="400" height="250" fill="url(#bg${n})"/><rect width="400" height="250" fill="url(#gl${n})"/>`;
+  const B=`url(#bm${n})`;
+  const waves=(lx,rx)=>[0,1,2].map(i=>`<path d="M${rx+i*22} ${110-i*14} Q${rx+20+i*26} 140 ${rx+i*22} ${200+i*14}" fill="none" stroke="${soft}" stroke-opacity="${.7-i*.2}" stroke-width="5" stroke-linecap="round"/><path d="M${lx-i*22} ${110-i*14} Q${lx-20-i*26} 140 ${lx-i*22} ${200+i*14}" fill="none" stroke="${soft}" stroke-opacity="${.7-i*.2}" stroke-width="5" stroke-linecap="round"/>`).join('');
+  const M={
+    rings:()=>`<circle cx="172" cy="138" r="50" fill="none" stroke="#E9C46A" stroke-width="11"/><circle cx="228" cy="138" r="50" fill="none" stroke="#F4E6BD" stroke-width="11"/><polygon points="172,62 187,78 172,94 157,78" fill="#fff" fill-opacity=".92"/>${spark(90,70)}${spark(315,195,8)}${spark(325,62,12)}`,
+    speaker:()=>`<rect x="148" y="38" width="104" height="180" rx="10" fill="${dark}" stroke="${glow}" stroke-opacity=".5" stroke-width="2"/><circle cx="200" cy="82" r="18" fill="${mid}"/><circle cx="200" cy="82" r="7" fill="${soft}"/><circle cx="200" cy="156" r="42" fill="${mid}"/><circle cx="200" cy="156" r="28" fill="${dark}"/><circle cx="200" cy="156" r="12" fill="${soft}"/>${waves(128,272)}`,
+    mixer:()=>{let s=`<rect x="60" y="70" width="280" height="140" rx="12" fill="${dark}" stroke="${glow}" stroke-opacity=".4" stroke-width="2"/>`;for(let i=0;i<8;i++){const x=92+i*31,fy=124+((i*37)%52);s+=`<circle cx="${x}" cy="96" r="7" fill="${mid}" stroke="${soft}" stroke-width="2"/><rect x="${x-2}" y="118" width="4" height="74" rx="2" fill="${mid}"/><rect x="${x-9}" y="${fy}" width="18" height="10" rx="2" fill="${soft}"/>`}return s},
+    uplight:()=>{let s='';for(let i=0;i<5;i++){const x=60+i*70,hh=(h+i*28)%360;s+=`<polygon points="${x-8},210 ${x+8},210 ${x+42},0 ${x-42},0" fill="hsl(${hh} 85% 65%)" fill-opacity=".3"/>`}s+=`<rect x="0" y="212" width="400" height="38" fill="${dark}" fill-opacity=".7"/>`;for(let i=0;i<5;i++){const x=60+i*70,hh=(h+i*28)%360;s+=`<rect x="${x-12}" y="204" width="24" height="12" rx="3" fill="#18161f"/><rect x="${x-8}" y="202" width="16" height="3" fill="hsl(${hh} 90% 75%)"/>`}return s},
+    moving:()=>{let s=`<polygon points="110,88 130,88 230,250 110,250" fill="${B}"/><polygon points="270,88 290,88 290,250 170,250" fill="${B}"/><rect x="20" y="22" width="360" height="14" fill="${mid}"/>`;for(let i=0;i<12;i++)s+=`<path d="M${20+i*30} 22 L${35+i*30} 36 L${50+i*30} 22" fill="none" stroke="${soft}" stroke-opacity=".35" stroke-width="2"/>`;[120,280].forEach(x=>{s+=`<rect x="${x-28}" y="36" width="56" height="6" fill="${mid}"/><rect x="${x-28}" y="36" width="6" height="40" fill="${mid}"/><rect x="${x+22}" y="36" width="6" height="40" fill="${mid}"/><rect x="${x-20}" y="48" width="40" height="42" rx="10" fill="${dark}" stroke="${glow}" stroke-opacity=".6" stroke-width="2"/><circle cx="${x}" cy="84" r="9" fill="${soft}"/>`});return s},
+    string:()=>{let s='';[0,1].forEach(k=>{const y0=45+k*80,cy=150+k*70;s+=`<path d="M0 ${y0} Q200 ${cy} 400 ${y0}" fill="none" stroke="#0e0c12" stroke-opacity=".7" stroke-width="2"/>`;for(let t=.04;t<.97;t+=.064){const x=2*(1-t)*t*200+t*t*400,y=(1-t)*(1-t)*y0+2*(1-t)*t*cy+t*t*y0;s+=`<circle cx="${x.toFixed(1)}" cy="${(y+7).toFixed(1)}" r="12" fill="#FFD98A" fill-opacity=".22"/><circle cx="${x.toFixed(1)}" cy="${(y+7).toFixed(1)}" r="4.5" fill="#FFE9B8"/>`}});return s},
+    dj:()=>{let s=`<rect x="40" y="96" width="320" height="120" rx="14" fill="${dark}" stroke="${glow}" stroke-opacity=".4" stroke-width="2"/>`;[125,275].forEach(cx=>{s+=`<circle cx="${cx}" cy="156" r="46" fill="${mid}"/><circle cx="${cx}" cy="156" r="40" fill="#111018"/><circle cx="${cx}" cy="156" r="31" fill="none" stroke="${mid}"/><circle cx="${cx}" cy="156" r="23" fill="none" stroke="${mid}"/><circle cx="${cx}" cy="156" r="10" fill="${soft}"/><path d="M${cx+44} 108 L${cx+32} 148" stroke="${soft}" stroke-width="4" stroke-linecap="round"/>`});s+=`<rect x="183" y="116" width="34" height="80" rx="5" fill="${mid}"/><rect x="190" y="130" width="6" height="16" rx="2" fill="${soft}"/><rect x="204" y="160" width="6" height="16" rx="2" fill="${soft}"/>`;return s+spark(200,52,9)},
+    mic:()=>{let s=`<path d="M184 128 L216 128 L208 230 L192 230 Z" fill="${dark}" stroke="${glow}" stroke-opacity=".5" stroke-width="2"/><rect x="178" y="118" width="44" height="14" rx="4" fill="${mid}"/><circle cx="200" cy="84" r="38" fill="${mid}" stroke="${soft}" stroke-opacity=".6" stroke-width="2"/>`;for(let y=58;y<=110;y+=8){const dx=Math.sqrt(38*38-(y-84)*(y-84))-2;s+=`<line x1="${200-dx}" y1="${y}" x2="${200+dx}" y2="${y}" stroke="${dark}" stroke-opacity=".6" stroke-width="2"/>`}return s+waves(150,250)},
+    camera:()=>`<rect x="150" y="60" width="60" height="26" rx="6" fill="${dark}"/><rect x="105" y="78" width="190" height="128" rx="16" fill="${dark}" stroke="${glow}" stroke-opacity=".5" stroke-width="2"/><rect x="240" y="92" width="34" height="14" rx="3" fill="${soft}"/><circle cx="200" cy="142" r="46" fill="${mid}"/><circle cx="200" cy="142" r="34" fill="#0d0c12"/><circle cx="200" cy="142" r="18" fill="hsl(${h} 60% 40%)"/><circle cx="192" cy="134" r="6" fill="${soft}" fill-opacity=".85"/>${spark(300,62,14)}${spark(80,190,8)}`,
+    fog:()=>{let s=`<polygon points="188,0 212,0 310,250 90,250" fill="${B}"/>`;[[70,222,90,28,.3],[190,232,110,30,.38],[320,220,95,26,.3],[130,205,70,20,.22],[260,206,80,22,.25],[200,245,160,26,.45]].forEach(([cx,cy,rx,ry,o])=>s+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff" fill-opacity="${o}"/>`);return s+spark(320,60,9)+spark(80,80,7)},
+    beamer:()=>`<rect x="228" y="36" width="146" height="104" rx="4" fill="${soft}" fill-opacity=".92"/><path d="M240 128 L280 86 L304 110 L326 92 L362 128 Z" fill="hsl(${h} 45% 40%)"/><circle cx="335" cy="66" r="10" fill="hsl(${h} 60% 55%)"/><line x1="301" y1="140" x2="301" y2="228" stroke="${mid}" stroke-width="4"/><polygon points="104,172 104,186 228,140 228,36" fill="${soft}" fill-opacity=".2"/><rect x="36" y="160" width="80" height="40" rx="8" fill="${dark}" stroke="${glow}" stroke-opacity=".5" stroke-width="2"/><circle cx="102" cy="180" r="10" fill="${soft}"/><rect x="20" y="200" width="120" height="6" rx="3" fill="${mid}"/>`
+  };
+  return `<svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${defs}${(M[m]||M.rings)()}</svg>`;
+}
+function imgSrc(k){if(!k)return null;if(String(k).startsWith('data:'))return k;return imgCache[k]||null}
+function media(i){const src=imgSrc(i.img);return src?`<img src="${src}" alt="${esc(i.name)}">`:art(i.motif,i.hue)}
+async function loadImages(items){
+  if(!db)return;
+  const keys=[...new Set(items.map(i=>i.img).filter(k=>k&&!String(k).startsWith('data:')&&!(k in imgCache)))];
+  if(!keys.length)return;
+  await Promise.all(keys.map(k=>db.collection('images').doc(k).get().then(d=>{imgCache[k]=d.exists?d.data().data:null}).catch(()=>{imgCache[k]=null})));
+  if($('catalog')&&ctx)renderCatalog();
+}
+
+/* ---------- Berechnung ---------- */
+function calc(items,selItems,km,settings){
+  let sub=0;const lines=[];
+  for(const [id,q] of Object.entries(selItems||{})){
+    const it=items.find(x=>x.id===id);
+    if(!it||q<=0)continue;
+    lines.push({it,q,sum:it.price*q});sub+=it.price*q;
+  }
+  lines.sort((a,b)=>items.indexOf(a.it)-items.indexOf(b.it));
+  km=Math.max(0,+km||0);const rate=+settings.kmRate||0,anf=km*rate,total=sub+anf;
+  const mw=total-total/(1+(+settings.mwst||0)/100);
+  return {lines,sub,km,rate,anf,total,mw,net:total-mw,count:lines.reduce((a,l)=>a+l.q,0)};
+}
+const kmOf=c=>c.mode==='admin'?c.sel.km:c.offer.km;
+const totals=()=>calc(ctx.items,ctx.sel.items,kmOf(ctx),ctx.settings);
+
+/* ---------- Router ---------- */
+const app=()=>$('app');
+function route(){
+  closeModal();setCartOpen(false);
+  const h=decodeURIComponent(location.hash.slice(1));
+  let next;
+  if(!configured){next='setup';renderSetup()}
+  else if(h.startsWith('a-')){next='offer:'+h;showOffer(h)}
+  else if(h==='admin'){
+    if(!authReady){next='loading';renderLoading()}
+    else if(!user){next='login';renderLogin()}
+    else if(adminError){next='error';renderAdminError()}
+    else if(!catalog){next='loading';renderLoading()}
+    else{next='admin';renderAdmin()}
+  }
+  else{next='landing';renderLanding()}
+  if(next!==view&&view)window.scrollTo(0,0);
+  view=next;
+}
+const firmaName=()=>(catalog&&catalog.settings.firma)||'Preisliste';
+function renderLoading(){app().innerHTML=`<div class="wrap"><div class="landing"><div class="inner"><p class="sub">Wird geladen …</p></div></div></div>`}
+function renderLanding(){app().innerHTML=`<div class="wrap"><div class="landing"><div class="inner"><h1>Ihr Angebot</h1><p class="sub">Ihr persönliches Angebot öffnen Sie über den Link, den Sie von uns erhalten haben.</p></div></div></div>`}
+function renderMissing(){app().innerHTML=`<div class="wrap">${user?adminViewBar():''}<div class="landing"><div class="inner"><h1>Angebot nicht verfügbar</h1><p class="sub">Dieses Angebot gibt es nicht mehr. Bitte fragen Sie bei uns nach einem aktuellen Angebot.</p></div></div></div>`}
+function renderSetup(){app().innerHTML=`<div class="wrap"><div class="landing"><div class="inner"><div class="eyebrow">Einrichtung</div><h1>Firebase fehlt noch</h1><p class="sub">Trage in der Datei config.js die Daten deiner Firebase-Web-App ein und lade sie neben die index.html. Danach lädt die Seite normal.</p></div></div></div>`}
+function renderLogin(){
+  app().innerHTML=`<div class="wrap"><div class="landing"><form class="inner login" id="loginForm">
+    <div class="eyebrow">Verwaltung</div><h1>Anmelden</h1>
+    <label class="f">E-Mail<input type="email" id="lEmail" autocomplete="username" required></label>
+    <label class="f">Passwort<input type="password" id="lPass" autocomplete="current-password" required></label>
+    <p class="hint" id="lErr" role="alert"></p>
+    <button class="btn primary" type="submit">Anmelden</button>
+  </form></div></div>`;
+  $('loginForm').addEventListener('submit',async e=>{
+    e.preventDefault();$('lErr').textContent='';
+    try{await auth.signInWithEmailAndPassword($('lEmail').value.trim(),$('lPass').value)}
+    catch(err){$('lErr').textContent=['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email'].includes(err.code)?'E-Mail oder Passwort stimmt nicht.':err.code==='auth/too-many-requests'?'Zu viele Versuche. Bitte später erneut probieren.':'Anmelden fehlgeschlagen ('+err.code+').'}
+  });
+}
+function renderAdminError(){app().innerHTML=`<div class="wrap"><div class="landing"><div class="inner"><div class="eyebrow">Verwaltung</div><h1>Kein Zugriff</h1><p class="sub">${esc(adminError)}</p><button class="btn ghost" data-action="logout">Abmelden</button></div></div></div>`}
+const adminViewBar=()=>`<div class="banner view"><span><b>Kundenansicht.</b> So sieht dein Kunde diesen Link.</span><button class="btn sm" data-action="back-admin">Zur Verwaltung</button></div>`;
+
+/* ---------- Firebase-Daten ---------- */
+function permMsg(e){return e&&e.code==='permission-denied'?'Firebase verweigert den Zugriff. Prüfe, ob deine E-Mail-Adresse in den Firestore-Regeln eingetragen ist.':'Verbindung zu Firebase fehlgeschlagen ('+(e&&e.code||'unbekannt')+').'}
+function startAdmin(){
+  stopAdmin();
+  unsubCatalog=db.collection('catalog').doc('main').onSnapshot(async snap=>{
+    if(!snap.exists){try{await db.collection('catalog').doc('main').set(clone(DEFAULT))}catch(e){adminError=permMsg(e);route()}return}
+    catalog=snap.data();catalog.items=catalog.items||[];catalog.categories=catalog.categories||[];
+    adminError='';refresh();loadImages(catalog.items.concat(...offers.map(o=>o.items||[])));
+  },e=>{adminError=permMsg(e);route()});
+  unsubOffers=db.collection('offers').orderBy('created','desc').onSnapshot(snap=>{
+    offers=snap.docs.map(d=>d.data());refresh();
+  },e=>{adminError=permMsg(e);route()});
+}
+function stopAdmin(){unsubCatalog&&unsubCatalog();unsubOffers&&unsubOffers();unsubCatalog=unsubOffers=null;catalog=null;offers=[]}
+function refresh(){
+  const h=location.hash.slice(1);
+  if(h!=='admin')return;
+  if($('modalRoot').innerHTML){pendingRender=true;return}
+  if(view==='admin')renderAdmin();else route();
+}
+async function showOffer(id){
+  let o=offerCache[id];
+  if(!o){
+    renderLoading();
+    try{const d=await db.collection('offers').doc(id).get();o=d.exists?d.data():null}catch(e){o=null}
+    if(o)offerCache[id]=o;
+    if(decodeURIComponent(location.hash.slice(1))!==id)return;
+  }
+  if(!o){renderMissing();return}
+  renderOffer(o);loadImages(o.items);
+}
+
+/* ---------- Gemeinsamer Shop-Bereich ---------- */
+function shopShell(){
+  const admin=ctx.mode==='admin';
+  const fields=admin
+    ?`<label class="f full">Anfahrt in km (gesamt, hin und zurück)<input type="number" min="0" inputmode="numeric" id="fKm" placeholder="0" value="${esc(ctx.sel.km||'')}"></label>`
+    :`<label class="f">Datum<input type="date" id="fDatum" value="${esc(ctx.sel.datum||'')}"></label><label class="f">Gäste<input type="number" min="0" inputmode="numeric" id="fGaeste" placeholder="z. B. 90" value="${esc(ctx.sel.gaeste||'')}"></label><label class="f full">Ort / Location<input type="text" id="fOrt" placeholder="z. B. Gutshof" value="${esc(ctx.sel.ort||'')}"></label>`;
+  return `<div class="layout"><main><nav class="filters" id="filters" aria-label="Kategorien"></nav><div id="catalog"></div></main>
+  <aside class="cart" id="cart" aria-label="Auswahl">
+    <div class="cart-head"><div><h2>${admin?'Angebot zusammenstellen':'Ihre Auswahl'}</h2><div class="count" id="cartCount"></div></div><button class="btn ghost sm close" data-action="close-cart">Schließen</button></div>
+    <div id="cartNote"></div><div class="lines" id="cartLines"></div>
+    <div class="fields">${fields}</div>
+    <div class="totals" id="cartTotals"></div>
+    <div class="cart-actions">${admin
+      ?`<button class="btn primary" data-action="new-offer">Angebot erstellen</button><button class="btn danger" data-action="clear">Leeren</button>`
+      :`<button class="btn primary" data-action="copy">Übersicht kopieren</button><button class="btn ghost" data-action="reset-sel">Zurücksetzen</button>`}</div>
+  </aside></div>`;
+}
+const barHtml=()=>`<button class="bar" id="bar" data-action="open-cart"></button><div class="scrim" id="scrim" data-action="close-cart"></div>`;
+function renderFilters(){
+  const all=[{id:'alle',name:'Alle'},...ctx.categories.filter(c=>ctx.mode==='admin'||ctx.items.some(i=>i.cat===c.id))];
+  if(!all.some(c=>c.id===filter))filter='alle';
+  $('filters').innerHTML=all.map(c=>`<button class="chip" data-action="filter" data-cat="${esc(c.id)}" aria-pressed="${filter===c.id}">${esc(c.name)}</button>`).join('');
+}
+const stepper=(id,q)=>`<div class="stepper"><button data-action="dec" data-id="${esc(id)}" aria-label="Weniger">−</button><span>${q}</span><button data-action="inc" data-id="${esc(id)}" aria-label="Mehr">+</button></div>`;
+function card(i){
+  const q=ctx.sel.items[i.id]||0;
+  const incl=i.incl||[];
+  const open=openDetails.has(i.id)?openDetails.get(i.id):(incl.length&&incl.length<=4);
+  return `<article class="card${q?' in':''}">
+    <div class="media">${media(i)}${i.badge?`<span class="badge">${esc(i.badge)}</span>`:''}${q?`<span class="incart">Ausgewählt</span>`:''}</div>
+    <div class="body">
+      <h3>${esc(i.name)}</h3>
+      ${i.desc?`<p class="desc">${esc(i.desc)}</p>`:''}
+      ${incl.length?`<details data-id="${esc(i.id)}"${open?' open':''}><summary>Enthält ${incl.length} Leistungen</summary><ul class="incl">${incl.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:''}
+      <div class="foot">
+        <div class="price"><span class="amt">${eur(i.price)}</span><span class="unit">${esc(i.unit)}</span></div>
+        ${q?stepper(i.id,q):`<button class="btn primary" data-action="add" data-id="${esc(i.id)}">Hinzufügen</button>`}
+      </div>
+      ${ctx.mode==='admin'?`<button class="btn ghost sm edit-btn" data-action="edit" data-id="${esc(i.id)}">Bearbeiten</button>`:''}
+    </div></article>`;
+}
+function renderCatalog(){
+  artN=0;
+  const admin=ctx.mode==='admin';
+  const cats=ctx.categories.filter(c=>filter==='alle'||c.id===filter);
+  $('catalog').innerHTML=cats.map(c=>{
+    const items=ctx.items.filter(i=>i.cat===c.id);
+    if(!items.length&&!admin)return '';
+    return `<section class="cat"><div class="cat-head"><h2>${esc(c.name)}</h2><span class="cat-count">${items.length} ${items.length===1?'Angebot':'Angebote'}</span>${admin?`<button class="btn ghost sm" data-action="new" data-cat="${esc(c.id)}">+ Leistung</button>`:''}</div><div class="grid">${items.map(card).join('')}</div></section>`;
+  }).join('');
+}
+function renderCart(){
+  const T=totals(),admin=ctx.mode==='admin';
+  $('cartCount').textContent=T.lines.length?`${T.lines.length} ${T.lines.length===1?'Position':'Positionen'}`:'Noch leer';
+  $('cartNote').innerHTML=admin?`<div class="note">Was du hier auswählst, ist im Angebot für den Kunden vorausgewählt.</div>`:'';
+  $('cartLines').innerHTML=T.lines.length?T.lines.map(({it,q,sum})=>`<div class="line">
+      <div class="line-name">${esc(it.name)}</div><div class="line-sum">${eur(sum)}</div>
+      <div class="line-meta">${eur(it.price)} ${esc(it.unit)}</div>${stepper(it.id,q)}
+      ${(it.incl||[]).length?`<ul class="incl">${it.incl.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    </div>`).join(''):`<div class="empty"><strong>Noch nichts ausgewählt</strong>${admin?'Ohne Auswahl bekommt der Kunde die Preisliste ohne Vorauswahl.':'Wählen Sie Leistungen mit „Hinzufügen“ aus.'}</div>`;
+  $('cartTotals').innerHTML=`
+    <div class="row"><span>Leistungen</span><span>${eur(T.sub)}</span></div>
+    <div class="row"><span>Anfahrt${T.km?` (${T.km} km × ${eur(T.rate)})`:''}</span><span>${eur(T.anf)}</span></div>
+    <div class="row grand"><span>Gesamt</span><span>${eur(T.total)}</span></div>
+    <div class="row muted"><span>Netto</span><span>${eur(T.net)}</span></div>
+    <div class="row muted"><span>enthaltene MwSt. ${esc(ctx.settings.mwst)} %</span><span>${eur(T.mw)}</span></div>`;
+  const bar=$('bar');
+  if(bar)bar.innerHTML=`<span>${T.count} ${T.count===1?'Leistung':'Leistungen'}<br><b>${eur(T.total)}</b></span><span class="go">Auswahl ansehen</span>`;
+}
+function bindFields(){
+  const map=ctx.mode==='admin'?[['fKm','km']]:[['fDatum','datum'],['fOrt','ort'],['fGaeste','gaeste']];
+  map.forEach(([el,key])=>{const e=$(el);if(e)e.addEventListener('input',ev=>{ctx.sel[key]=ev.target.value;ctx.save();if(key==='km')renderCart()})});
+}
+function mountShop(){renderFilters();renderCatalog();renderCart();bindFields()}
+function setQty(id,q){if(q<=0)delete ctx.sel.items[id];else ctx.sel.items[id]=q;ctx.save();renderCatalog();renderCart()}
+
+/* ---------- Verwaltung ---------- */
+function renderAdmin(){
+  const sel=load('admin-sel')||{items:{},km:''};
+  for(const id of Object.keys(sel.items))if(!catalog.items.some(i=>i.id===id))delete sel.items[id];
+  ctx={mode:'admin',items:catalog.items,categories:catalog.categories,settings:catalog.settings,sel,save(){save('admin-sel',this.sel)}};
+  const y=window.scrollY;
+  app().innerHTML=`<div class="wrap">
+    <header class="top"><div><div class="eyebrow">${esc(catalog.settings.firma)} · Verwaltung</div><h1>Preisliste</h1><p class="sub">Preise pflegen und Angebote mit festem Link an Kunden schicken. Alle Preise inkl. ${esc(catalog.settings.mwst)} % MwSt.</p></div>
+      <div class="top-actions"><button class="btn ghost" data-action="settings">Einstellungen</button><button class="btn ghost" data-action="logout">Abmelden</button></div></header>
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-action="tab" data-tab="preise" aria-selected="${tab==='preise'}">Preisliste</button><button class="tab" role="tab" data-action="tab" data-tab="angebote" aria-selected="${tab==='angebote'}">Angebote<span class="pill">${offers.length}</span></button></div>
+    ${tab==='preise'?shopShell():offersList()}</div>${tab==='preise'?barHtml():''}`;
+  if(tab==='preise')mountShop();
+  window.scrollTo(0,y);
+}
+function offersList(){
+  const intro=`<p class="offers-intro">Jedes Angebot ist eine feste Kopie mit eigenem Link. Spätere Änderungen an der Preisliste wirken sich darauf nicht aus. Kommt etwas dazu oder ändert sich ein Preis, erstellst du ein neues Angebot, zum Beispiel über „Als Vorlage nutzen“.</p>`;
+  if(!offers.length)return intro+`<div class="emptybox"><strong>Noch keine Angebote</strong>Stelle unter „Preisliste“ Leistungen zusammen und tippe auf „Angebot erstellen“.</div>`;
+  return intro+`<div class="offers">${offers.map(o=>{
+    const T=calc(o.items,o.selection,o.km,o.settings),ex=expired(o);
+    return `<article class="offer">
+      <div class="offer-top"><div><h3>${esc(o.title)}</h3><div class="meta">${offerNo(o)} · erstellt am ${fmtDate(o.created)}${o.customer?' · '+esc(o.customer):''}${o.eventDate?' · Event '+fmtDate(o.eventDate):''}</div></div>
+      <span class="status ${ex?'off':'on'}">${ex?'abgelaufen':'gültig bis '+fmtDate(o.validUntil)}</span></div>
+      <div class="offer-sum"><span>${T.lines.length} vorausgewählt · ${o.items.length} Leistungen im Angebot</span><b>${eur(T.total)}</b></div>
+      <div class="linkbox"><input readonly id="lnk-${esc(o.id)}" value="${esc(offerLink(o))}" aria-label="Link zum Angebot"><button class="btn primary sm" data-action="copy-link" data-id="${esc(o.id)}">Link kopieren</button></div>
+      <div class="offer-actions"><button class="btn ghost sm" data-action="view-offer" data-id="${esc(o.id)}">Kundenansicht</button><button class="btn ghost sm" data-action="template" data-id="${esc(o.id)}">Als Vorlage nutzen</button><button class="btn danger sm" data-action="withdraw" data-id="${esc(o.id)}">Zurückziehen</button></div>
+    </article>`}).join('')}</div>`;
+}
+
+/* ---------- Kundenansicht ---------- */
+function renderOffer(o){
+  const key='offer-'+o.id;
+  const sel=load(key)||{items:clone(o.selection||{}),datum:o.eventDate||'',ort:'',gaeste:''};
+  ctx={mode:'offer',offer:o,items:o.items,categories:o.categories,settings:o.settings,sel,save(){save(key,this.sel)}};
+  const ex=expired(o);
+  document.title=o.title+' – '+o.settings.firma;
+  app().innerHTML=`<div class="wrap">${user?adminViewBar():''}
+    <header class="top"><div><div class="eyebrow">${esc(o.settings.firma)}</div><h1>${esc(o.title)}</h1>
+      <p class="sub">Angebot ${offerNo(o)} vom ${fmtDate(o.created)} · gültig bis ${fmtDate(o.validUntil)}${o.customer?' · für '+esc(o.customer):''}</p></div></header>
+    ${ex?`<div class="banner warn" style="margin-top:14px"><span>Dieses Angebot ist am ${fmtDate(o.validUntil)} abgelaufen. Bitte fragen Sie bei uns nach einem aktuellen Angebot.</span></div>`:''}
+    ${o.note?`<div class="letter">${esc(o.note)}</div>`:''}
+    <p class="sub" style="margin-top:14px">Alle Preise inkl. ${esc(o.settings.mwst)} % MwSt. Passen Sie die Auswahl gern an und schicken Sie uns die Übersicht, wenn Sie buchen möchten.</p>
+    ${shopShell()}</div>${barHtml()}`;
+  mountShop();
+}
+function offerText(){
+  const o=ctx.offer,T=totals(),L=[];
+  L.push(`Anfrage zu Angebot ${offerNo(o)} – ${o.title}`);
+  L.push(o.settings.firma);
+  if(ctx.sel.datum){const d=new Date(ctx.sel.datum+'T12:00');L.push(`Datum: ${d.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}`)}
+  if(ctx.sel.ort)L.push(`Ort: ${ctx.sel.ort}`);
+  if(ctx.sel.gaeste)L.push(`Gäste: ${ctx.sel.gaeste}`);
+  L.push('');
+  T.lines.forEach(({it,q,sum})=>{L.push(`${q} ${UNIT_SHORT[it.unit]||'×'} ${it.name} (${eur(it.price)} ${it.unit}): ${eur(sum)}`);(it.incl||[]).forEach(x=>L.push(`   – ${x}`))});
+  if(T.km)L.push(`Anfahrt ${T.km} km × ${eur(T.rate)}: ${eur(T.anf)}`);
+  L.push('');
+  L.push(`Gesamt: ${eur(T.total)}`);
+  L.push(`Netto ${eur(T.net)} zzgl. ${o.settings.mwst} % MwSt. ${eur(T.mw)}`);
+  L.push('');
+  L.push(offerLink(o));
+  return L.join('\n');
+}
+
+/* ---------- Speichern ---------- */
+let saving=false;
+async function saveCatalog(mutate,msg){
+  if(saving)return false;
+  const next=clone(catalog);mutate(next);
+  saving=true;toast('Wird gespeichert …',true);
+  try{await db.collection('catalog').doc('main').set(next);saving=false;closeModal();toast(msg||'Gespeichert');return true}
+  catch(e){saving=false;toast(permMsg(e));return false}
+}
+
+/* ---------- Dialoge ---------- */
+function closeModal(){const m=$('modalRoot');if(m&&m.innerHTML){m.innerHTML='';if(pendingRender){pendingRender=false;refresh()}}}
+function openModal(html){$('modalRoot').innerHTML=`<div class="modal" data-action="modal-bg"><div class="dialog" role="dialog" aria-modal="true">${html}</div></div>`;const f=$('modalRoot').querySelector('input:not([readonly]),textarea,button');f&&f.focus()}
+let draftImg=null,editingId=null;
+function openEditor(id,cat){
+  editingId=id;
+  const it=id?catalog.items.find(x=>x.id===id):{name:'',cat:cat||catalog.categories[0]?.id,price:0,unit:'pauschal',desc:'',incl:[],motif:'speaker',hue:Math.floor(Math.random()*360),badge:'',img:null};
+  draftImg=it.img||null;
+  const hue=it.hue;
+  openModal(`<h2>${id?'Leistung bearbeiten':'Neue Leistung'}</h2>
+    <label class="f">Name<input id="eName" value="${esc(it.name)}" placeholder="z. B. Hochzeit Classic"></label>
+    <div class="two">
+      <label class="f">Preis in € (brutto)<input id="ePrice" type="number" step="0.01" min="0" value="${it.price}"></label>
+      <label class="f">Einheit<select id="eUnit">${UNITS.map(u=>`<option${u===it.unit?' selected':''}>${u}</option>`).join('')}</select></label>
+    </div>
+    <div class="two">
+      <label class="f">Kategorie<select id="eCat">${catalog.categories.map(c=>`<option value="${esc(c.id)}"${c.id===it.cat?' selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+      <label class="f">Etikett (optional)<input id="eBadge" value="${esc(it.badge)}" placeholder="z. B. Beliebt"></label>
+    </div>
+    <label class="f">Kurzbeschreibung<input id="eDesc" value="${esc(it.desc)}"></label>
+    <label class="f">Enthaltene Leistungen (eine pro Zeile)<textarea id="eIncl">${esc((it.incl||[]).join('\n'))}</textarea></label>
+    <div class="thumb" id="eThumb">${imgSrc(draftImg)?`<img src="${imgSrc(draftImg)}" alt="">`:art(it.motif,hue)}</div>
+    <div class="two">
+      <label class="f">Eigenes Foto<input id="eImg" type="file" accept="image/*"></label>
+      <label class="f">Illustration (ohne Foto)<select id="eMotif">${Object.entries(MOTIFS).map(([k,v])=>`<option value="${k}"${k===it.motif?' selected':''}>${v}</option>`).join('')}</select></label>
+    </div>
+    <p class="hint">Fotos werden automatisch verkleinert. Bereits verschickte Angebote behalten ihre alten Preise und Bilder.</p>
+    <div class="dialog-actions">
+      ${id?`<button class="btn danger" data-action="delete-item">Löschen</button>`:''}
+      ${draftImg?`<button class="btn ghost" data-action="remove-img">Foto entfernen</button>`:''}
+      <span class="spacer"></span>
+      <button class="btn ghost" data-action="close-modal">Abbrechen</button>
+      <button class="btn primary" data-action="save-item">Speichern</button>
+    </div>`);
+  $('eMotif').addEventListener('change',e=>{if(!imgSrc(draftImg))$('eThumb').innerHTML=art(e.target.value,hue)});
+  $('eImg').addEventListener('change',async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{draftImg=await readImage(f);$('eThumb').innerHTML=`<img src="${draftImg}" alt="">`}catch(err){toast('Das Foto konnte nicht gelesen werden.')}
+  });
+}
+function readImage(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,900/img.width);const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+async function saveItem(){
+  const v=id=>$(id).value;
+  const name=v('eName').trim();if(!name){toast('Bitte einen Namen eingeben.');return}
+  const fields={name,price:Math.max(0,parseFloat(v('ePrice'))||0),unit:v('eUnit'),cat:v('eCat'),badge:v('eBadge').trim(),desc:v('eDesc').trim(),incl:v('eIncl').split('\n').map(s=>s.trim()).filter(Boolean),motif:v('eMotif')};
+  let img=draftImg||null;
+  if(img&&String(img).startsWith('data:')){
+    const key='img-'+rid(10);
+    toast('Foto wird hochgeladen …',true);
+    try{await db.collection('images').doc(key).set({data:img});imgCache[key]=img;img=key}
+    catch(e){toast(permMsg(e));return}
+  }
+  const eid=editingId;
+  saveCatalog(c=>{
+    if(eid)Object.assign(c.items.find(x=>x.id===eid),fields,{img});
+    else c.items.push({id:'i-'+rid(8),hue:Math.floor(Math.random()*360),...fields,img});
+  });
+}
+function openSettings(){
+  const s=catalog.settings;
+  openModal(`<h2>Einstellungen</h2>
+    <label class="f">Firmenname<input id="sFirma" value="${esc(s.firma)}"></label>
+    <div class="two">
+      <label class="f">Anfahrt € pro km<input id="sKm" type="number" step="0.01" min="0" value="${s.kmRate}"></label>
+      <label class="f">MwSt. in %<input id="sMwst" type="number" step="1" min="0" value="${s.mwst}"></label>
+    </div>
+    <label class="f">Angebote gültig für (Tage)<input id="sValid" type="number" min="1" value="${s.validDays||30}"></label>
+    <label class="f">Kategorien (eine pro Zeile)<textarea id="sCats">${esc(catalog.categories.map(c=>c.name).join('\n'))}</textarea></label>
+    <p class="hint">Neue Zeile ergibt eine neue Kategorie. Kategorien, in denen noch Leistungen stehen, bleiben beim Entfernen erhalten.</p>
+    <div class="dialog-actions"><span class="spacer"></span><button class="btn ghost" data-action="close-modal">Abbrechen</button><button class="btn primary" data-action="save-settings">Speichern</button></div>
+    <fieldset class="checks"><legend>Datensicherung</legend>
+      <p class="hint">Lädt Preisliste, Fotos und alle Angebote als eine Datei herunter. Mit „Sicherung einspielen“ holst du alles wieder zurück, auch in ein neues Firebase-Projekt.</p>
+      <div class="offer-actions"><button class="btn ghost sm" data-action="backup">Sicherung herunterladen</button><label class="btn ghost sm" for="restoreFile">Sicherung einspielen</label><input type="file" id="restoreFile" accept=".json,application/json" hidden></div>
+      <p class="hint" id="backupInfo">${lastBackupText()}</p>
+    </fieldset>`);
+  $('restoreFile').addEventListener('change',e=>{const f=e.target.files[0];if(f)restoreBackup(f);e.target.value=''});
+}
+function saveSettings(){
+  const firma=$('sFirma').value.trim()||'Eventservice',kmRate=Math.max(0,parseFloat($('sKm').value)||0),mwst=Math.max(0,parseFloat($('sMwst').value)||0),validDays=Math.max(1,parseInt($('sValid').value)||30);
+  const names=$('sCats').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  saveCatalog(c=>{
+    Object.assign(c.settings,{firma,kmRate,mwst,validDays});
+    const next=names.map(n=>c.categories.find(x=>x.name===n)||{id:'c-'+rid(),name:n});
+    c.categories.forEach(x=>{if(!next.some(y=>y.id===x.id)&&c.items.some(i=>i.cat===x.id))next.push(x)});
+    c.categories=next;
+  });
+}
+function openCreate(){
+  const T=totals(),pre=templateFrom||{};
+  const hasSel=T.lines.length>0;
+  openModal(`<h2>Angebot erstellen</h2>
+    <p class="hint">Das Angebot friert die heutigen Preise ein und bekommt einen eigenen Link.</p>
+    <label class="f">Titel<input id="oTitle" value="${esc(pre.title||'')}" placeholder="z. B. Hochzeit Müller"></label>
+    <div class="two"><label class="f">Kunde (optional)<input id="oCustomer" value="${esc(pre.customer||'')}" placeholder="z. B. Familie Müller"></label><label class="f">Eventdatum<input type="date" id="oDate" value="${esc(pre.eventDate||'')}"></label></div>
+    <div class="two"><label class="f">Gültig bis<input type="date" id="oValid" value="${addDays(isoToday(),catalog.settings.validDays||30)}"></label><label class="f">Anfahrt km<input id="oKm" type="number" min="0" value="${esc(ctx.sel.km||0)}"></label></div>
+    <label class="f">Nachricht an den Kunden (optional)<textarea id="oNote" placeholder="z. B. Hallo Familie Müller, wie besprochen hier euer Angebot …">${esc(pre.note||'')}</textarea></label>
+    <fieldset class="checks"><legend>Im Angebot zeigen</legend>
+      <label class="opt"><input type="radio" name="oScope" value="sel" ${hasSel?'checked':'disabled'}> ${hasSel?'Nur die '+T.lines.length+' ausgewählten Leistungen':'Nur ausgewählte Leistungen (noch nichts ausgewählt)'}</label>
+      <label class="opt"><input type="radio" name="oScope" value="all" ${hasSel?'':'checked'}> Preisliste aus diesen Kategorien${hasSel?', Auswahl vorausgewählt':''}:</label>
+      <div class="catchecks">${catalog.categories.map(c=>`<label class="opt"><input type="checkbox" name="oCat" value="${esc(c.id)}" checked> ${esc(c.name)}</label>`).join('')}</div>
+    </fieldset>
+    <div class="dialog-actions"><span class="spacer"></span><button class="btn ghost" data-action="close-modal">Abbrechen</button><button class="btn primary" data-action="create-offer">Angebot erstellen</button></div>`);
+}
+async function createOffer(){
+  if(saving)return;
+  const title=$('oTitle').value.trim();if(!title){toast('Bitte einen Titel eingeben.');return}
+  const scope=(document.querySelector('input[name=oScope]:checked')||{}).value||'all';
+  const cats=[...document.querySelectorAll('input[name=oCat]:checked')].map(x=>x.value);
+  const items=scope==='sel'?catalog.items.filter(i=>ctx.sel.items[i.id]>0):catalog.items.filter(i=>cats.includes(i.cat));
+  if(!items.length){toast('Das Angebot enthält keine Leistungen. Bitte Kategorien auswählen.');return}
+  const id='a-'+rid(8);
+  const selection={};items.forEach(i=>{if(ctx.sel.items[i.id]>0)selection[i.id]=ctx.sel.items[i.id]});
+  const offer={id,created:new Date().toISOString(),title,customer:$('oCustomer').value.trim(),eventDate:$('oDate').value,validUntil:$('oValid').value||addDays(isoToday(),30),note:$('oNote').value.trim(),km:Math.max(0,+$('oKm').value||0),
+    settings:{firma:catalog.settings.firma,mwst:catalog.settings.mwst,kmRate:catalog.settings.kmRate},
+    categories:clone(catalog.categories.filter(c=>items.some(i=>i.cat===c.id))),items:clone(items),selection};
+  saving=true;toast('Wird gespeichert …',true);
+  try{await db.collection('offers').doc(id).set(offer);saving=false;templateFrom=null;offerCache[id]=offer;tab='angebote';pendingRender=false;$('modalRoot').innerHTML='';renderAdmin();showCreated(offer);toast('Angebot erstellt')}
+  catch(e){saving=false;toast(permMsg(e))}
+}
+function showCreated(o){
+  openModal(`<h2>Angebot erstellt</h2>
+    <p class="hint">${esc(o.title)} · ${offerNo(o)}. Diesen Link schickst du dem Kunden. Er zeigt immer genau diese Preise.</p>
+    <div class="linkbox"><input readonly id="lnk-${esc(o.id)}" value="${esc(offerLink(o))}" aria-label="Link zum Angebot"><button class="btn primary sm" data-action="copy-link" data-id="${esc(o.id)}">Kopieren</button></div>
+    <div class="dialog-actions"><button class="btn ghost" data-action="view-offer" data-id="${esc(o.id)}">Kundenansicht</button><span class="spacer"></span><button class="btn primary" data-action="close-modal">Fertig</button></div>`);
+}
+function openCopy(){
+  openModal(`<h2>Übersicht kopieren</h2><p class="hint">Kopieren Sie die Übersicht und schicken Sie sie uns per E-Mail oder WhatsApp.</p><textarea class="copybox" id="copyText" readonly>${esc(offerText())}</textarea>
+    <div class="dialog-actions"><span class="spacer"></span><button class="btn ghost" data-action="close-modal">Schließen</button><button class="btn primary" data-action="do-copy">In Zwischenablage</button></div>`);
+}
+function copyFrom(input){
+  const fallback=()=>{input.focus();input.select();toast('Text markiert, jetzt kopieren.')};
+  try{navigator.clipboard.writeText(input.value).then(()=>toast('Kopiert'),fallback)}catch(e){fallback()}
+}
+function arm(btn,label,fn){
+  if(btn.classList.contains('armed')){fn();return}
+  const orig=btn.textContent;btn.classList.add('armed');btn.textContent=label;
+  setTimeout(()=>{if(btn.isConnected){btn.classList.remove('armed');btn.textContent=orig}},3500);
+}
+let toastT;
+function toast(msg,sticky){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);if(!sticky)toastT=setTimeout(()=>t.hidden=true,3000)}
+function setCartOpen(o){const c=$('cart'),s=$('scrim');if(c)c.classList.toggle('open',o);if(s)s.classList.toggle('show',o)}
+
+
+/* ---------- Datensicherung ---------- */
+function lastBackupText(){const d=load('last-backup');return d?'Letzte Sicherung auf diesem Gerät: '+fmtDate(d):'Auf diesem Gerät wurde noch keine Sicherung heruntergeladen.'}
+async function backup(){
+  toast('Sicherung wird erstellt …',true);
+  try{
+    const [cat,off,img]=await Promise.all([db.collection('catalog').doc('main').get(),db.collection('offers').get(),db.collection('images').get()]);
+    const data={format:'preisliste-sicherung',version:1,created:new Date().toISOString(),
+      catalog:cat.exists?cat.data():null,
+      offers:off.docs.map(d=>d.data()),
+      images:Object.fromEntries(img.docs.map(d=>[d.id,d.data().data]))};
+    const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='preisliste-sicherung-'+isoToday()+'.json';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    save('last-backup',isoToday());const i=$('backupInfo');if(i)i.textContent=lastBackupText();
+    toast(`Sicherung gespeichert: ${data.catalog?data.catalog.items.length:0} Leistungen, ${data.offers.length} Angebote, ${Object.keys(data.images).length} Fotos`);
+  }catch(e){toast(permMsg(e))}
+}
+let pendingRestore=null;
+async function restoreBackup(file){
+  let data;
+  try{data=JSON.parse(await file.text())}catch(e){toast('Die Datei ist keine gültige Sicherung.');return}
+  if(!data||data.format!=='preisliste-sicherung'||!data.catalog){toast('Die Datei ist keine Sicherung dieser Preisliste.');return}
+  pendingRestore=data;
+  openModal(`<h2>Sicherung einspielen</h2>
+    <p class="hint">Sicherung vom ${fmtDate(data.created)}: ${data.catalog.items.length} Leistungen, ${(data.offers||[]).length} Angebote, ${Object.keys(data.images||{}).length} Fotos.</p>
+    <p class="hint">Die aktuelle Preisliste wird durch die aus der Sicherung ersetzt. Angebote und Fotos, die es schon gibt, bleiben unverändert. Fehlende werden wiederhergestellt, ihre Links funktionieren dann wieder.</p>
+    <div class="dialog-actions"><span class="spacer"></span><button class="btn ghost" data-action="close-modal">Abbrechen</button><button class="btn primary" data-action="do-restore">Einspielen</button></div>`);
+}
+async function doRestore(){
+  const data=pendingRestore;if(!data||saving)return;
+  saving=true;
+  try{
+    const imgs=Object.entries(data.images||{}),offs=data.offers||[];
+    let n=0;const total=imgs.length+offs.length;
+    const step=()=>toast(`Wird eingespielt … ${n} von ${total}`,true);
+    for(const [k,v] of imgs){const ref=db.collection('images').doc(k);if(!(await ref.get()).exists)await ref.set({data:v});imgCache[k]=v;n++;step()}
+    for(const o of offs){const ref=db.collection('offers').doc(o.id);if(!(await ref.get()).exists)await ref.set(o);n++;step()}
+    await db.collection('catalog').doc('main').set(data.catalog);
+    saving=false;pendingRestore=null;closeModal();toast('Sicherung eingespielt');
+  }catch(e){saving=false;toast(permMsg(e))}
+}
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-action]');if(!b)return;
+  const a=b.dataset.action,id=b.dataset.id;
+  if(a==='modal-bg'&&e.target!==b)return;
+  switch(a){
+    case 'add':setQty(id,1);break;
+    case 'inc':setQty(id,(ctx.sel.items[id]||0)+1);break;
+    case 'dec':setQty(id,(ctx.sel.items[id]||0)-1);break;
+    case 'filter':filter=b.dataset.cat;renderFilters();renderCatalog();break;
+    case 'tab':tab=b.dataset.tab;renderAdmin();window.scrollTo(0,0);break;
+    case 'edit':openEditor(id);break;
+    case 'new':openEditor(null,b.dataset.cat);break;
+    case 'settings':openSettings();break;
+    case 'save-item':saveItem();break;
+    case 'save-settings':saveSettings();break;
+    case 'backup':backup();break;
+    case 'do-restore':doRestore();break;
+    case 'remove-img':{draftImg=null;const it=catalog.items.find(x=>x.id===editingId);$('eThumb').innerHTML=art($('eMotif').value,it?it.hue:200);b.remove();break}
+    case 'delete-item':arm(b,'Wirklich löschen?',()=>{const d=editingId;delete ctx.sel.items[d];ctx.save();saveCatalog(c=>{c.items=c.items.filter(x=>x.id!==d)},'Gelöscht')});break;
+    case 'close-modal':case 'modal-bg':closeModal();break;
+    case 'open-cart':setCartOpen(true);break;
+    case 'close-cart':setCartOpen(false);break;
+    case 'clear':arm(b,'Wirklich leeren?',()=>{save('admin-sel',{items:{},km:''});templateFrom=null;renderAdmin()});break;
+    case 'new-offer':openCreate();break;
+    case 'create-offer':createOffer();break;
+    case 'copy-link':{const inp=$('lnk-'+id);if(inp)copyFrom(inp);break}
+    case 'view-offer':$('modalRoot').innerHTML='';location.hash=id;break;
+    case 'back-admin':location.hash='admin';break;
+    case 'logout':auth.signOut();break;
+    case 'template':{const o=offers.find(x=>x.id===id);if(!o)break;
+      const items={};let missing=0;Object.entries(o.selection||{}).forEach(([k,q])=>{if(catalog.items.some(i=>i.id===k))items[k]=q;else missing++});
+      save('admin-sel',{items,km:o.km||''});templateFrom={title:o.title,customer:o.customer,eventDate:o.eventDate,note:o.note};
+      tab='preise';renderAdmin();window.scrollTo(0,0);
+      toast(missing?`Auswahl übernommen, ${missing} Leistung(en) gibt es nicht mehr.`:'Auswahl mit aktuellen Preisen übernommen.');break}
+    case 'withdraw':arm(b,'Link wirklich ungültig machen?',async()=>{try{await db.collection('offers').doc(id).delete();delete offerCache[id];toast('Angebot zurückgezogen')}catch(err){toast(permMsg(err))}});break;
+    case 'copy':if(!totals().lines.length){toast('Es ist noch nichts ausgewählt.');break}openCopy();break;
+    case 'do-copy':copyFrom($('copyText'));break;
+    case 'reset-sel':{const o=ctx.offer;try{localStorage.removeItem('offer-'+o.id)}catch(err){}renderOffer(o);toast('Auswahl zurückgesetzt');break}
+  }
+});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details[data-id]'))openDetails.set(d.dataset.id,d.open)},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('modalRoot').innerHTML)closeModal();else setCartOpen(false)}});
+window.addEventListener('hashchange',()=>{document.title='Preisliste';route()});
+
+/* ---------- Start ---------- */
+route();
+if(configured){
+  auth.onAuthStateChanged(u=>{
+    user=u;authReady=true;adminError='';
+    if(u)startAdmin();else stopAdmin();
+    if(location.hash.slice(1)==='admin'||!u)route();
+  });
+}
+
+</script>
+</body>
+</html>
